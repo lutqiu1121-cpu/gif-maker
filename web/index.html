@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>图片转 GIF · 本地小工具</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#fff; --ink:#1b2333; --sub:#6b7590; --line:#e6eaf2;
+  --brand:#3b6cf6; --brand2:#7c5cf7; --danger:#e5534b; --ok:#12a06a;
+  --shadow:0 6px 24px rgba(30,45,90,.07);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:20px 16px 48px; background:var(--bg); color:var(--ink);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.3px}
+.lead{color:var(--sub);font-size:13px;margin:0 0 18px}
+.badge{display:inline-block;background:#e8f6ef;color:var(--ok);font-size:12px;
+  padding:2px 9px;border-radius:99px;margin-left:6px;vertical-align:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card h2 .n{width:22px;height:22px;border-radius:7px;background:#edf1ff;color:var(--brand);
+  font-size:12px;display:grid;place-items:center;flex:none}
+.drop{border:2px dashed #c9d4ee;border-radius:12px;background:#fafbff;
+  padding:22px 14px;text-align:center;transition:.18s;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--brand);background:#f0f4ff}
+.drop strong{display:block;font-size:15px;margin-bottom:4px}
+.drop span{color:var(--sub);font-size:12px}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;
+  cursor:pointer;background:#eef1f8;color:var(--ink);min-height:42px}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;
+  box-shadow:0 4px 14px rgba(59,108,246,.28)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--sub)}
+.btn.big{width:100%;font-size:16px;padding:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+input[type=number],input[type=color],select{
+  width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;
+  font-size:14px;color:var(--ink);background:#fff;min-height:40px;font-family:inherit}
+input[type=color]{padding:3px;height:40px;cursor:pointer}
+label.f{display:block;font-size:12px;color:var(--sub);margin:0 0 5px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);
+  padding:6px 0;cursor:pointer;user-select:none}
+.chk input{width:17px;height:17px;accent-color:var(--brand);flex:none}
+.hint{font-size:12px;color:var(--sub);margin:8px 0 0}
+.frames{display:grid;gap:8px;max-height:340px;overflow:auto;padding-right:2px}
+.frame{display:grid;grid-template-columns:26px 62px 1fr;gap:10px;align-items:center;
+  border:1px solid var(--line);border-radius:11px;padding:8px;background:#fcfdff}
+.frame.drag{opacity:.4}
+.frame .num{width:24px;height:24px;border-radius:7px;background:#edf1ff;color:var(--brand);
+  font-size:12px;font-weight:700;display:grid;place-items:center}
+.frame .pic{width:62px;height:62px;border-radius:8px;overflow:hidden;
+  background:repeating-conic-gradient(#e9edf5 0 25%,#fff 0 50%) 0 0/12px 12px;
+  display:grid;place-items:center;border:1px solid var(--line)}
+.frame .pic img{width:100%;height:100%;object-fit:contain;display:block}
+.frame .nm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--sub);margin-bottom:6px}
+.ops{display:flex;gap:5px;flex-wrap:wrap}
+.ops button{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:7px;
+  width:30px;height:28px;font-size:13px;cursor:pointer;line-height:1}
+.ops button:hover{border-color:var(--brand);color:var(--brand)}
+.ops button.del:hover{border-color:var(--danger);color:var(--danger)}
+.bar{height:7px;border-radius:99px;background:#eef1f8;overflow:hidden;margin:10px 0 0;display:none}
+.bar.on{display:block}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--brand2));
+  border-radius:99px;transition:width .18s}
+.status{font-size:13px;color:var(--sub);margin-top:8px;min-height:20px}
+.status.err{color:var(--danger)}
+.preview{width:100%;border-radius:10px;border:1px solid var(--line);
+  background:repeating-conic-gradient(#eef1f7 0 25%,#fff 0 50%) 0 0/16px 16px;
+  display:block;max-height:340px;object-fit:contain}
+.meta-out{font-size:13px;color:var(--sub);margin:10px 0}
+footer{text-align:center;color:#9aa4bb;font-size:12px;margin-top:22px;line-height:1.8}
+@media(max-width:420px){.grid{grid-template-columns:1fr}body{padding:16px 12px 40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>图片转 GIF <span class="badge">纯本地 · 不上传</span></h1>
+  <p class="lead">选几张图 → 排好顺序 → 调速度 → 生成下载。全程在浏览器里完成，图片不会离开你的设备。</p>
+
+  <div class="card">
+    <h2><span class="n">1</span>选图片</h2>
+    <div class="drop" id="drop">
+      <strong>点这里选图，或把图片拖进来</strong>
+      <span>支持 JPG / PNG / WebP / BMP / GIF 首帧 · 可多选、可分次添加</span>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <div class="row" style="margin-top:10px">
+      <button class="btn ghost" id="addMore">继续添加</button>
+      <button class="btn ghost" id="clearAll" style="flex:0 0 auto">清空</button>
+    </div>
+  </div>
+
+  <div class="card" id="listCard" hidden>
+    <h2><span class="n">2</span>排顺序 <span id="count" style="font-weight:400;color:var(--sub);font-size:12px"></span></h2>
+    <div class="frames" id="frames"></div>
+    <p class="hint">用 ↑ ↓ 调整顺序，电脑上也支持直接拖动。第 1 张决定画面比例，其他图等比居中、不拉伸。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>设置</h2>
+    <div class="grid">
+      <div>
+        <label class="f" for="width">输出宽度（px，0 = 用第 1 张原宽）</label>
+        <input type="number" id="width" value="480" min="0" max="1600" step="10">
+      </div>
+      <div>
+        <label class="f" for="delay">每张停留（毫秒，1000 = 1 秒）</label>
+        <input type="number" id="delay" value="200" min="20" max="10000" step="10">
+      </div>
+      <div>
+        <label class="f" for="loop">循环</label>
+        <select id="loop">
+          <option value="0">无限循环</option>
+          <option value="-1">只播一次</option>
+          <option value="3">循环 3 次</option>
+        </select>
+      </div>
+      <div>
+        <label class="f" for="colors">颜色数（越少文件越小）</label>
+        <select id="colors">
+          <option value="256">256 色 · 画质最好</option>
+          <option value="128" selected>128 色 · 均衡</option>
+          <option value="64">64 色 · 体积最小</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px;align-items:flex-end">
+      <div style="flex:0 0 78px">
+        <label class="f" for="bg">背景色</label>
+        <input type="color" id="bg" value="#ffffff">
+      </div>
+      <div style="flex:1">
+        <label class="chk"><input type="checkbox" id="transparent">保留透明背景（PNG 透明）</label>
+        <label class="chk"><input type="checkbox" id="perframe">每帧独立调色（颜色更准、体积更大）</label>
+      </div>
+    </div>
+    <p class="hint">不勾「保留透明」时，透明区域会填成上面的背景色。GIF 只有 256 色，照片类素材建议宽度 480 左右；超过 30 帧在手机上会慢一些。</p>
+    <button class="btn primary big" id="make" style="margin-top:14px">生成 GIF</button>
+    <div class="bar" id="bar"><i id="barIn"></i></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card" id="outCard" hidden>
+    <h2><span class="n">✓</span>做好了</h2>
+    <img class="preview" id="preview" alt="GIF 预览">
+    <div class="meta-out" id="size"></div>
+    <div class="row">
+      <a class="btn primary" id="dl" download="我的动图.gif" style="text-align:center;text-decoration:none;display:block;line-height:22px">下载 GIF</a>
+      <button class="btn ghost" id="again" style="flex:0 0 auto">重新生成</button>
+    </div>
+    <p class="hint">手机上如果点下载没反应，长按预览图选择「保存图片」。</p>
+  </div>
+
+  <footer>单文件网页 · 关掉网络也能用<br>图片只在本地处理，刷新页面后会清空</footer>
+</div>
+
+<script>
+(function(){
+var exports = {};
+var __defProp = Object.defineProperty;
+var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {get: all[name], enumerable: true});
+};
+
+// src/index.js
+__markAsModule(exports);
+__export(exports, {
+  GIFEncoder: () => GIFEncoder,
+  applyPalette: () => applyPalette,
+  default: () => src_default,
+  nearestColor: () => nearestColor,
+  nearestColorIndex: () => nearestColorIndex,
+  nearestColorIndexWithDistance: () => nearestColorIndexWithDistance,
+  prequantize: () => prequantize,
+  quantize: () => quantize,
+  snapColorsToPalette: () => snapColorsToPalette
+});
+
+// src/constants.js
+var constants_default = {
+  signature: "GIF",
+  version: "89a",
+  trailer: 59,
+  extensionIntroducer: 33,
+  applicationExtensionLabel: 255,
+  graphicControlExtensionLabel: 249,
+  imageSeparator: 44,
+  signatureSize: 3,
+  versionSize: 3,
+  globalColorTableFlagMask: 128,
+  colorResolutionMask: 112,
+  sortFlagMask: 8,
+  globalColorTableSizeMask: 7,
+  applicationIdentifierSize: 8,
+  applicationAuthCodeSize: 3,
+  disposalMethodMask: 28,
+  userInputFlagMask: 2,
+  transparentColorFlagMask: 1,
+  localColorTableFlagMask: 128,
+  interlaceFlagMask: 64,
+  idSortFlagMask: 32,
+  localColorTableSizeMask: 7
+};
+
+// src/stream.js
+function createStream(initialCapacity = 256) {
+  let cursor = 0;
+  let contents = new Uint8Array(initialCapacity);
+  return {
+    get buffer() {
+      return contents.buffer;
+    },
+    reset() {
+      cursor = 0;
+    },
+    bytesView() {
+      return contents.subarray(0, cursor);
+    },
+    bytes() {
+      return contents.slice(0, cursor);
+    },
+    writeByte(byte) {
+      expand(cursor + 1);
+      contents[cursor] = byte;
+      cursor++;
+    },
+    writeBytes(data, offset = 0, byteLength = data.length) {
+      expand(cursor + byteLength);
+      for (let i = 0; i < byteLength; i++) {
+        contents[cursor++] = data[i + offset];
+      }
+    },
+    writeBytesView(data, offset = 0, byteLength = data.byteLength) {
+      expand(cursor + byteLength);
+      contents.set(data.subarray(offset, offset + byteLength), cursor);
+      cursor += byteLength;
+    }
+  };
+  function expand(newCapacity) {
+    var prevCapacity = contents.length;
+    if (prevCapacity >= newCapacity)
+      return;
+    var CAPACITY_DOUBLING_MAX = 1024 * 1024;
+    newCapacity = Math.max(newCapacity, prevCapacity * (prevCapacity < CAPACITY_DOUBLING_MAX ? 2 : 1.125) >>> 0);
+    if (prevCapacity != 0)
+      newCapacity = Math.max(newCapacity, 256);
+    const oldContents = contents;
+    contents = new Uint8Array(newCapacity);
+    if (cursor > 0)
+      contents.set(oldContents.subarray(0, cursor), 0);
+  }
+}
+
+// src/lzwEncode.js
+var BITS = 12;
+var DEFAULT_HSIZE = 5003;
+var MASKS = [
+  0,
+  1,
+  3,
+  7,
+  15,
+  31,
+  63,
+  127,
+  255,
+  511,
+  1023,
+  2047,
+  4095,
+  8191,
+  16383,
+  32767,
+  65535
+];
+function lzwEncode(width, height, pixels, colorDepth, outStream = createStream(512), accum = new Uint8Array(256), htab = new Int32Array(DEFAULT_HSIZE), codetab = new Int32Array(DEFAULT_HSIZE)) {
+  const hsize = htab.length;
+  const initCodeSize = Math.max(2, colorDepth);
+  accum.fill(0);
+  codetab.fill(0);
+  htab.fill(-1);
+  let cur_accum = 0;
+  let cur_bits = 0;
+  const init_bits = initCodeSize + 1;
+  const g_init_bits = init_bits;
+  let clear_flg = false;
+  let n_bits = g_init_bits;
+  let maxcode = (1 << n_bits) - 1;
+  const ClearCode = 1 << init_bits - 1;
+  const EOFCode = ClearCode + 1;
+  let free_ent = ClearCode + 2;
+  let a_count = 0;
+  let ent = pixels[0];
+  let hshift = 0;
+  for (let fcode = hsize; fcode < 65536; fcode *= 2) {
+    ++hshift;
+  }
+  hshift = 8 - hshift;
+  outStream.writeByte(initCodeSize);
+  output(ClearCode);
+  const length = pixels.length;
+  for (let idx = 1; idx < length; idx++) {
+    next_block: {
+      const c = pixels[idx];
+      const fcode = (c << BITS) + ent;
+      let i = c << hshift ^ ent;
+      if (htab[i] === fcode) {
+        ent = codetab[i];
+        break next_block;
+      }
+      const disp = i === 0 ? 1 : hsize - i;
+      while (htab[i] >= 0) {
+        i -= disp;
+        if (i < 0)
+          i += hsize;
+        if (htab[i] === fcode) {
+          ent = codetab[i];
+          break next_block;
+        }
+      }
+      output(ent);
+      ent = c;
+      if (free_ent < 1 << BITS) {
+        codetab[i] = free_ent++;
+        htab[i] = fcode;
+      } else {
+        htab.fill(-1);
+        free_ent = ClearCode + 2;
+        clear_flg = true;
+        output(ClearCode);
+      }
+    }
+  }
+  output(ent);
+  output(EOFCode);
+  outStream.writeByte(0);
+  return outStream.bytesView();
+  function output(code) {
+    cur_accum &= MASKS[cur_bits];
+    if (cur_bits > 0)
+      cur_accum |= code << cur_bits;
+    else
+      cur_accum = code;
+    cur_bits += n_bits;
+    while (cur_bits >= 8) {
+      accum[a_count++] = cur_accum & 255;
+      if (a_count >= 254) {
+        outStream.writeByte(a_count);
+        outStream.writeBytesView(accum, 0, a_count);
+        a_count = 0;
+      }
+      cur_accum >>= 8;
+      cur_bits -= 8;
+    }
+    if (free_ent > maxcode || clear_flg) {
+      if (clear_flg) {
+        n_bits = g_init_bits;
+        maxcode = (1 << n_bits) - 1;
+        clear_flg = false;
+      } else {
+        ++n_bits;
+        maxcode = n_bits === BITS ? 1 << n_bits : (1 << n_bits) - 1;
+      }
+    }
+    if (code == EOFCode) {
+      while (cur_bits > 0) {
+        accum[a_count++] = cur_accum & 255;
+        if (a_count >= 254) {
+          outStream.writeByte(a_count);
+          outStream.writeBytesView(accum, 0, a_count);
+          a_count = 0;
+        }
+        cur_accum >>= 8;
+        cur_bits -= 8;
+      }
+      if (a_count > 0) {
+        outStream.writeByte(a_count);
+        outStream.writeBytesView(accum, 0, a_count);
+        a_count = 0;
+      }
+    }
+  }
+}
+var lzwEncode_default = lzwEncode;
+
+// src/rgb-packing.js
+function rgb888_to_rgb565(r, g, b) {
+  return r << 8 & 63488 | g << 2 & 992 | b >> 3;
+}
+function rgba8888_to_rgba4444(r, g, b, a) {
+  return r >> 4 | g & 240 | (b & 240) << 4 | (a & 240) << 8;
+}
+function rgb888_to_rgb444(r, g, b) {
+  return r >> 4 << 8 | g & 240 | b >> 4;
+}
+
+// src/pnnquant2.js
+function clamp(value, min, max) {
+  return value < min ? min : value > max ? max : value;
+}
+function sqr(value) {
+  return value * value;
+}
+function find_nn(bins, idx, hasAlpha) {
+  var nn = 0;
+  var err = 1e100;
+  const bin1 = bins[idx];
+  const n1 = bin1.cnt;
+  const wa = bin1.ac;
+  const wr = bin1.rc;
+  const wg = bin1.gc;
+  const wb = bin1.bc;
+  for (var i = bin1.fw; i != 0; i = bins[i].fw) {
+    const bin = bins[i];
+    const n2 = bin.cnt;
+    const nerr2 = n1 * n2 / (n1 + n2);
+    if (nerr2 >= err)
+      continue;
+    var nerr = 0;
+    if (hasAlpha) {
+      nerr += nerr2 * sqr(bin.ac - wa);
+      if (nerr >= err)
+        continue;
+    }
+    nerr += nerr2 * sqr(bin.rc - wr);
+    if (nerr >= err)
+      continue;
+    nerr += nerr2 * sqr(bin.gc - wg);
+    if (nerr >= err)
+      continue;
+    nerr += nerr2 * sqr(bin.bc - wb);
+    if (nerr >= err)
+      continue;
+    err = nerr;
+    nn = i;
+  }
+  bin1.err = err;
+  bin1.nn = nn;
+}
+function create_bin() {
+  return {
+    ac: 0,
+    rc: 0,
+    gc: 0,
+    bc: 0,
+    cnt: 0,
+    nn: 0,
+    fw: 0,
+    bk: 0,
+    tm: 0,
+    mtm: 0,
+    err: 0
+  };
+}
+function create_bin_list(data, format) {
+  const bincount = format === "rgb444" ? 4096 : 65536;
+  const bins = new Array(bincount);
+  const size = data.length;
+  if (format === "rgba4444") {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const a = color >> 24 & 255;
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgba8888_to_rgba4444(r, g, b, a);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.ac += a;
+      bin.cnt++;
+    }
+  } else if (format === "rgb444") {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgb888_to_rgb444(r, g, b);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.cnt++;
+    }
+  } else {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgb888_to_rgb565(r, g, b);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.cnt++;
+    }
+  }
+  return bins;
+}
+function quantize(rgba, maxColors, opts = {}) {
+  const {
+    format = "rgb565",
+    clearAlpha = true,
+    clearAlphaColor = 0,
+    clearAlphaThreshold = 0,
+    oneBitAlpha = false
+  } = opts;
+  if (!rgba || !rgba.buffer) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (!(rgba instanceof Uint8Array) && !(rgba instanceof Uint8ClampedArray)) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  const data = new Uint32Array(rgba.buffer);
+  let useSqrt = opts.useSqrt !== false;
+  const hasAlpha = format === "rgba4444";
+  const bins = create_bin_list(data, format);
+  const bincount = bins.length;
+  const bincountMinusOne = bincount - 1;
+  const heap = new Uint32Array(bincount + 1);
+  var maxbins = 0;
+  for (var i = 0; i < bincount; ++i) {
+    const bin = bins[i];
+    if (bin != null) {
+      var d = 1 / bin.cnt;
+      if (hasAlpha)
+        bin.ac *= d;
+      bin.rc *= d;
+      bin.gc *= d;
+      bin.bc *= d;
+      bins[maxbins++] = bin;
+    }
+  }
+  if (sqr(maxColors) / maxbins < 0.022) {
+    useSqrt = false;
+  }
+  var i = 0;
+  for (; i < maxbins - 1; ++i) {
+    bins[i].fw = i + 1;
+    bins[i + 1].bk = i;
+    if (useSqrt)
+      bins[i].cnt = Math.sqrt(bins[i].cnt);
+  }
+  if (useSqrt)
+    bins[i].cnt = Math.sqrt(bins[i].cnt);
+  var h, l, l2;
+  for (i = 0; i < maxbins; ++i) {
+    find_nn(bins, i, false);
+    var err = bins[i].err;
+    for (l = ++heap[0]; l > 1; l = l2) {
+      l2 = l >> 1;
+      if (bins[h = heap[l2]].err <= err)
+        break;
+      heap[l] = h;
+    }
+    heap[l] = i;
+  }
+  var extbins = maxbins - maxColors;
+  for (i = 0; i < extbins; ) {
+    var tb;
+    for (; ; ) {
+      var b1 = heap[1];
+      tb = bins[b1];
+      if (tb.tm >= tb.mtm && bins[tb.nn].mtm <= tb.tm)
+        break;
+      if (tb.mtm == bincountMinusOne)
+        b1 = heap[1] = heap[heap[0]--];
+      else {
+        find_nn(bins, b1, false);
+        tb.tm = i;
+      }
+      var err = bins[b1].err;
+      for (l = 1; (l2 = l + l) <= heap[0]; l = l2) {
+        if (l2 < heap[0] && bins[heap[l2]].err > bins[heap[l2 + 1]].err)
+          l2++;
+        if (err <= bins[h = heap[l2]].err)
+          break;
+        heap[l] = h;
+      }
+      heap[l] = b1;
+    }
+    var nb = bins[tb.nn];
+    var n1 = tb.cnt;
+    var n2 = nb.cnt;
+    var d = 1 / (n1 + n2);
+    if (hasAlpha)
+      tb.ac = d * (n1 * tb.ac + n2 * nb.ac);
+    tb.rc = d * (n1 * tb.rc + n2 * nb.rc);
+    tb.gc = d * (n1 * tb.gc + n2 * nb.gc);
+    tb.bc = d * (n1 * tb.bc + n2 * nb.bc);
+    tb.cnt += nb.cnt;
+    tb.mtm = ++i;
+    bins[nb.bk].fw = nb.fw;
+    bins[nb.fw].bk = nb.bk;
+    nb.mtm = bincountMinusOne;
+  }
+  let palette = [];
+  var k = 0;
+  for (i = 0; ; ++k) {
+    let r = clamp(Math.round(bins[i].rc), 0, 255);
+    let g = clamp(Math.round(bins[i].gc), 0, 255);
+    let b = clamp(Math.round(bins[i].bc), 0, 255);
+    let a = 255;
+    if (hasAlpha) {
+      a = clamp(Math.round(bins[i].ac), 0, 255);
+      if (oneBitAlpha) {
+        const threshold = typeof oneBitAlpha === "number" ? oneBitAlpha : 127;
+        a = a <= threshold ? 0 : 255;
+      }
+      if (clearAlpha && a <= clearAlphaThreshold) {
+        r = g = b = clearAlphaColor;
+        a = 0;
+      }
+    }
+    const color = hasAlpha ? [r, g, b, a] : [r, g, b];
+    const exists = existsInPalette(palette, color);
+    if (!exists)
+      palette.push(color);
+    if ((i = bins[i].fw) == 0)
+      break;
+  }
+  return palette;
+}
+function existsInPalette(palette, color) {
+  for (let i = 0; i < palette.length; i++) {
+    const p = palette[i];
+    let matchesRGB = p[0] === color[0] && p[1] === color[1] && p[2] === color[2];
+    let matchesAlpha = p.length >= 4 && color.length >= 4 ? p[3] === color[3] : true;
+    if (matchesRGB && matchesAlpha)
+      return true;
+  }
+  return false;
+}
+
+// src/color.js
+function euclideanDistanceSquared(a, b) {
+  var sum = 0;
+  var n;
+  for (n = 0; n < a.length; n++) {
+    const dx = a[n] - b[n];
+    sum += dx * dx;
+  }
+  return sum;
+}
+
+// src/palettize.js
+function roundStep(byte, step) {
+  return step > 1 ? Math.round(byte / step) * step : byte;
+}
+function prequantize(rgba, {roundRGB = 5, roundAlpha = 10, oneBitAlpha = null} = {}) {
+  const data = new Uint32Array(rgba.buffer);
+  for (let i = 0; i < data.length; i++) {
+    const color = data[i];
+    let a = color >> 24 & 255;
+    let b = color >> 16 & 255;
+    let g = color >> 8 & 255;
+    let r = color & 255;
+    a = roundStep(a, roundAlpha);
+    if (oneBitAlpha) {
+      const threshold = typeof oneBitAlpha === "number" ? oneBitAlpha : 127;
+      a = a <= threshold ? 0 : 255;
+    }
+    r = roundStep(r, roundRGB);
+    g = roundStep(g, roundRGB);
+    b = roundStep(b, roundRGB);
+    data[i] = a << 24 | b << 16 | g << 8 | r << 0;
+  }
+}
+function applyPalette(rgba, palette, format = "rgb565") {
+  if (!rgba || !rgba.buffer) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (!(rgba instanceof Uint8Array) && !(rgba instanceof Uint8ClampedArray)) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (palette.length > 256) {
+    throw new Error("applyPalette() only works with 256 colors or less");
+  }
+  const data = new Uint32Array(rgba.buffer);
+  const length = data.length;
+  const bincount = format === "rgb444" ? 4096 : 65536;
+  const index = new Uint8Array(length);
+  const cache = new Array(bincount);
+  const hasAlpha = format === "rgba4444";
+  if (format === "rgba4444") {
+    for (let i = 0; i < length; i++) {
+      const color = data[i];
+      const a = color >> 24 & 255;
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const key = rgba8888_to_rgba4444(r, g, b, a);
+      const idx = key in cache ? cache[key] : cache[key] = nearestColorIndexRGBA(r, g, b, a, palette);
+      index[i] = idx;
+    }
+  } else {
+    const rgb888_to_key = format === "rgb444" ? rgb888_to_rgb444 : rgb888_to_rgb565;
+    for (let i = 0; i < length; i++) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const key = rgb888_to_key(r, g, b);
+      const idx = key in cache ? cache[key] : cache[key] = nearestColorIndexRGB(r, g, b, palette);
+      index[i] = idx;
+    }
+  }
+  return index;
+}
+function nearestColorIndexRGBA(r, g, b, a, palette) {
+  let k = 0;
+  let mindist = 1e100;
+  for (let i = 0; i < palette.length; i++) {
+    const px2 = palette[i];
+    const a2 = px2[3];
+    let curdist = sqr2(a2 - a);
+    if (curdist > mindist)
+      continue;
+    const r2 = px2[0];
+    curdist += sqr2(r2 - r);
+    if (curdist > mindist)
+      continue;
+    const g2 = px2[1];
+    curdist += sqr2(g2 - g);
+    if (curdist > mindist)
+      continue;
+    const b2 = px2[2];
+    curdist += sqr2(b2 - b);
+    if (curdist > mindist)
+      continue;
+    mindist = curdist;
+    k = i;
+  }
+  return k;
+}
+function nearestColorIndexRGB(r, g, b, palette) {
+  let k = 0;
+  let mindist = 1e100;
+  for (let i = 0; i < palette.length; i++) {
+    const px2 = palette[i];
+    const r2 = px2[0];
+    let curdist = sqr2(r2 - r);
+    if (curdist > mindist)
+      continue;
+    const g2 = px2[1];
+    curdist += sqr2(g2 - g);
+    if (curdist > mindist)
+      continue;
+    const b2 = px2[2];
+    curdist += sqr2(b2 - b);
+    if (curdist > mindist)
+      continue;
+    mindist = curdist;
+    k = i;
+  }
+  return k;
+}
+function snapColorsToPalette(palette, knownColors, threshold = 5) {
+  if (!palette.length || !knownColors.length)
+    return;
+  const paletteRGB = palette.map((p) => p.slice(0, 3));
+  const thresholdSq = threshold * threshold;
+  const dim = palette[0].length;
+  for (let i = 0; i < knownColors.length; i++) {
+    let color = knownColors[i];
+    if (color.length < dim) {
+      color = [color[0], color[1], color[2], 255];
+    } else if (color.length > dim) {
+      color = color.slice(0, 3);
+    } else {
+      color = color.slice();
+    }
+    const r = nearestColorIndexWithDistance(paletteRGB, color.slice(0, 3), euclideanDistanceSquared);
+    const idx = r[0];
+    const distanceSq = r[1];
+    if (distanceSq > 0 && distanceSq <= thresholdSq) {
+      palette[idx] = color;
+    }
+  }
+}
+function sqr2(a) {
+  return a * a;
+}
+function nearestColorIndex(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  let minDist = Infinity;
+  let minDistIndex = -1;
+  for (let j = 0; j < colors.length; j++) {
+    const paletteColor = colors[j];
+    const dist = distanceFn(pixel, paletteColor);
+    if (dist < minDist) {
+      minDist = dist;
+      minDistIndex = j;
+    }
+  }
+  return minDistIndex;
+}
+function nearestColorIndexWithDistance(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  let minDist = Infinity;
+  let minDistIndex = -1;
+  for (let j = 0; j < colors.length; j++) {
+    const paletteColor = colors[j];
+    const dist = distanceFn(pixel, paletteColor);
+    if (dist < minDist) {
+      minDist = dist;
+      minDistIndex = j;
+    }
+  }
+  return [minDistIndex, minDist];
+}
+function nearestColor(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  return colors[nearestColorIndex(colors, pixel, distanceFn)];
+}
+
+// src/index.js
+function GIFEncoder(opt = {}) {
+  const {initialCapacity = 4096, auto = true} = opt;
+  const stream = createStream(initialCapacity);
+  const HSIZE = 5003;
+  const accum = new Uint8Array(256);
+  const htab = new Int32Array(HSIZE);
+  const codetab = new Int32Array(HSIZE);
+  let hasInit = false;
+  return {
+    reset() {
+      stream.reset();
+      hasInit = false;
+    },
+    finish() {
+      stream.writeByte(constants_default.trailer);
+    },
+    bytes() {
+      return stream.bytes();
+    },
+    bytesView() {
+      return stream.bytesView();
+    },
+    get buffer() {
+      return stream.buffer;
+    },
+    get stream() {
+      return stream;
+    },
+    writeHeader,
+    writeFrame(index, width, height, opts = {}) {
+      const {
+        transparent = false,
+        transparentIndex = 0,
+        delay = 0,
+        palette = null,
+        repeat = 0,
+        colorDepth = 8,
+        dispose = -1
+      } = opts;
+      let first = false;
+      if (auto) {
+        if (!hasInit) {
+          first = true;
+          writeHeader();
+          hasInit = true;
+        }
+      } else {
+        first = Boolean(opts.first);
+      }
+      width = Math.max(0, Math.floor(width));
+      height = Math.max(0, Math.floor(height));
+      if (first) {
+        if (!palette) {
+          throw new Error("First frame must include a { palette } option");
+        }
+        encodeLogicalScreenDescriptor(stream, width, height, palette, colorDepth);
+        encodeColorTable(stream, palette);
+        if (repeat >= 0) {
+          encodeNetscapeExt(stream, repeat);
+        }
+      }
+      const delayTime = Math.round(delay / 10);
+      encodeGraphicControlExt(stream, dispose, delayTime, transparent, transparentIndex);
+      const useLocalColorTable = Boolean(palette) && !first;
+      encodeImageDescriptor(stream, width, height, useLocalColorTable ? palette : null);
+      if (useLocalColorTable)
+        encodeColorTable(stream, palette);
+      encodePixels(stream, index, width, height, colorDepth, accum, htab, codetab);
+    }
+  };
+  function writeHeader() {
+    writeUTFBytes(stream, "GIF89a");
+  }
+}
+function encodeGraphicControlExt(stream, dispose, delay, transparent, transparentIndex) {
+  stream.writeByte(33);
+  stream.writeByte(249);
+  stream.writeByte(4);
+  if (transparentIndex < 0) {
+    transparentIndex = 0;
+    transparent = false;
+  }
+  var transp, disp;
+  if (!transparent) {
+    transp = 0;
+    disp = 0;
+  } else {
+    transp = 1;
+    disp = 2;
+  }
+  if (dispose >= 0) {
+    disp = dispose & 7;
+  }
+  disp <<= 2;
+  const userInput = 0;
+  stream.writeByte(0 | disp | userInput | transp);
+  writeUInt16(stream, delay);
+  stream.writeByte(transparentIndex || 0);
+  stream.writeByte(0);
+}
+function encodeLogicalScreenDescriptor(stream, width, height, palette, colorDepth = 8) {
+  const globalColorTableFlag = 1;
+  const sortFlag = 0;
+  const globalColorTableSize = colorTableSize(palette.length) - 1;
+  const fields = globalColorTableFlag << 7 | colorDepth - 1 << 4 | sortFlag << 3 | globalColorTableSize;
+  const backgroundColorIndex = 0;
+  const pixelAspectRatio = 0;
+  writeUInt16(stream, width);
+  writeUInt16(stream, height);
+  stream.writeBytes([fields, backgroundColorIndex, pixelAspectRatio]);
+}
+function encodeNetscapeExt(stream, repeat) {
+  stream.writeByte(33);
+  stream.writeByte(255);
+  stream.writeByte(11);
+  writeUTFBytes(stream, "NETSCAPE2.0");
+  stream.writeByte(3);
+  stream.writeByte(1);
+  writeUInt16(stream, repeat);
+  stream.writeByte(0);
+}
+function encodeColorTable(stream, palette) {
+  const colorTableLength = 1 << colorTableSize(palette.length);
+  for (let i = 0; i < colorTableLength; i++) {
+    let color = [0, 0, 0];
+    if (i < palette.length) {
+      color = palette[i];
+    }
+    stream.writeByte(color[0]);
+    stream.writeByte(color[1]);
+    stream.writeByte(color[2]);
+  }
+}
+function encodeImageDescriptor(stream, width, height, localPalette) {
+  stream.writeByte(44);
+  writeUInt16(stream, 0);
+  writeUInt16(stream, 0);
+  writeUInt16(stream, width);
+  writeUInt16(stream, height);
+  if (localPalette) {
+    const interlace = 0;
+    const sorted = 0;
+    const palSize = colorTableSize(localPalette.length) - 1;
+    stream.writeByte(128 | interlace | sorted | 0 | palSize);
+  } else {
+    stream.writeByte(0);
+  }
+}
+function encodePixels(stream, index, width, height, colorDepth = 8, accum, htab, codetab) {
+  lzwEncode_default(width, height, index, colorDepth, stream, accum, htab, codetab);
+}
+function writeUInt16(stream, short) {
+  stream.writeByte(short & 255);
+  stream.writeByte(short >> 8 & 255);
+}
+function writeUTFBytes(stream, text) {
+  for (var i = 0; i < text.length; i++) {
+    stream.writeByte(text.charCodeAt(i));
+  }
+}
+function colorTableSize(length) {
+  return Math.max(Math.ceil(Math.log2(length)), 1);
+}
+var src_default = GIFEncoder;
+window.gifenc = exports;
+})();
+</script>
+<script>
+(function(){
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const G = window.gifenc;
+  let items = [], seq = 0, resultUrl = null, busy = false;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const status = (t, err) => { const e = $('#status'); e.textContent = t || ''; e.className = 'status' + (err ? ' err' : ''); };
+  const setBar = p => { $('#bar').classList.add('on'); $('#barIn').style.width = Math.round(p*100) + '%'; };
+  const yieldUI = () => new Promise(r => setTimeout(r, 0));
+
+  async function fileToBitmap(file){
+    if ('createImageBitmap' in window) {
+      try { return await createImageBitmap(file); } catch(e){}
+    }
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  function makeThumb(bmp){
+    const c = document.createElement('canvas');
+    const r = Math.min(140/bmp.width, 140/bmp.height, 1);
+    c.width = Math.max(1, Math.round(bmp.width*r));
+    c.height = Math.max(1, Math.round(bmp.height*r));
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  }
+  async function addFiles(list){
+    if (busy) return;
+    const files = Array.from(list).filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp|avif)$/i.test(f.name));
+    if (!files.length) { status('没找到可用的图片文件', true); return; }
+    files.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+    busy = true; status('正在读取 ' + files.length + ' 张图…');
+    const bad = [];
+    for (const f of files){
+      status('正在读取：' + f.name);
+      await yieldUI();
+      try {
+        const bmp = await fileToBitmap(f);
+        items.push({ id: ++seq, name: f.name, bmp, thumb: makeThumb(bmp) });
+      } catch(e){ bad.push(f.name); }
+    }
+    busy = false; render();
+    status(bad.length ? '已添加 ' + (files.length-bad.length) + ' 张，跳过：' + bad.join('、') : '已添加 ' + files.length + ' 张，共 ' + items.length + ' 帧', !!bad.length);
+  }
+  function render(){
+    $('#listCard').hidden = items.length === 0;
+    $('#count').textContent = items.length ? '· ' + items.length + ' 帧' : '';
+    const box = $('#frames'); box.innerHTML = '';
+    items.forEach((it, i) => {
+      const el = document.createElement('div');
+      el.className = 'frame'; el.draggable = true; el.dataset.i = i;
+      el.innerHTML =
+        '<div class="num">' + (i+1) + '</div>' +
+        '<div class="pic"><img src="' + it.thumb + '" alt=""></div>' +
+        '<div><div class="nm" title="' + esc(it.name) + '">' + esc(it.name) + '</div>' +
+        '<div class="ops">' +
+          '<button data-act="up" title="上移">↑</button>' +
+          '<button data-act="down" title="下移">↓</button>' +
+          '<button data-act="top" title="移到最前">⤒</button>' +
+          '<button data-act="del" class="del" title="删除">×</button>' +
+        '</div></div>';
+      box.appendChild(el);
+    });
+  }
+  $('#frames').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.closest('.frame').dataset.i, act = b.dataset.act;
+    if (act === 'del') { items.splice(i,1); }
+    else if (act === 'up' && i > 0) { [items[i-1],items[i]] = [items[i],items[i-1]]; }
+    else if (act === 'down' && i < items.length-1) { [items[i+1],items[i]] = [items[i],items[i+1]]; }
+    else if (act === 'top' && i > 0) { items.unshift(items.splice(i,1)[0]); }
+    render();
+  });
+  let dragFrom = null;
+  $('#frames').addEventListener('dragstart', e => {
+    const f = e.target.closest('.frame'); if (!f) return;
+    dragFrom = +f.dataset.i; f.classList.add('drag');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', String(dragFrom)); } catch(_){}
+  });
+  $('#frames').addEventListener('dragend', e => {
+    e.target.closest('.frame')?.classList.remove('drag');
+  });
+  $('#frames').addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+  $('#frames').addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.target.closest('.frame'); if (!f || dragFrom === null) return;
+    const to = +f.dataset.i;
+    if (to !== dragFrom) items.splice(to, 0, items.splice(dragFrom, 1)[0]);
+    dragFrom = null; render();
+  });
+
+  const openPicker = () => $('#file').click();
+  $('#drop').addEventListener('click', openPicker);
+  $('#addMore').addEventListener('click', openPicker);
+  $('#file').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  ['dragenter','dragover'].forEach(t => $('#drop').addEventListener(t, e => { e.preventDefault(); $('#drop').classList.add('over'); }));
+  ['dragleave','drop'].forEach(t => $('#drop').addEventListener(t, e => { e.preventDefault(); $('#drop').classList.remove('over'); }));
+  $('#drop').addEventListener('drop', e => addFiles(e.dataTransfer.files));
+  $('#clearAll').addEventListener('click', () => {
+    items = []; render();
+    if (resultUrl) { URL.revokeObjectURL(resultUrl); resultUrl = null; }
+    $('#outCard').hidden = true; $('#bar').classList.remove('on'); status('已清空');
+  });
+  $('#again').addEventListener('click', build);
+
+  function hexRgb(hex){
+    const h = hex.replace('#','');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  function readFrame(bmp, W, H, bg, transparent){
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d', {willReadFrequently:true});
+    if (!transparent){ ctx.fillStyle = 'rgb(' + bg.join(',') + ')'; ctx.fillRect(0,0,W,H); }
+    const s = Math.min(W/bmp.width, H/bmp.height);
+    const w = bmp.width*s, h = bmp.height*s;
+    ctx.drawImage(bmp, (W-w)/2, (H-h)/2, w, h);
+    const d = ctx.getImageData(0,0,W,H).data;
+    for (let p = 0; p < d.length; p += 4){
+      if (transparent){
+        if (d[p+3] < 128){ d[p]=0; d[p+1]=0; d[p+2]=0; d[p+3]=0; }
+        else d[p+3] = 255;
+      } else {
+        d[p+3] = 255;
+      }
+    }
+    return d;
+  }
+  function samplePixels(d, out){
+    const step = Math.max(1, Math.floor((d.length/4)/6000));
+    for (let p = 0; p < d.length; p += 4*step) out.push(d[p],d[p+1],d[p+2],d[p+3]);
+  }
+  async function build(){
+    if (busy) return;
+    if (items.length < 2){ status('至少要选 2 张图片才能做动图', true); return; }
+    const W0 = parseInt($('#width').value,10) || 0;
+    const first = items[0].bmp;
+    const scale = W0 ? W0 / first.width : 1;
+    const W = Math.max(1, Math.min(1600, Math.round(first.width*scale)));
+    const H = Math.max(1, Math.min(1600, Math.round(first.height*scale)));
+    const delay = Math.max(20, Math.min(10000, parseInt($('#delay').value,10) || 200));
+    const repeat = parseInt($('#loop').value,10);
+    const colors = parseInt($('#colors').value,10);
+    const bg = hexRgb($('#bg').value || '#ffffff');
+    const transparent = $('#transparent').checked;
+    const perFrame = $('#perframe').checked;
+    const fmt = transparent ? 'rgba4444' : 'rgb565';
+    const qopts = transparent
+      ? {format:fmt, oneBitAlpha:true, clearAlpha:true, clearAlphaColor:0, clearAlphaThreshold:0}
+      : {format:fmt};
+
+    busy = true; $('#make').disabled = true;
+    try {
+      setBar(0); status('正在准备画布 ' + W + '×' + H + '…');
+      await yieldUI();
+      const gif = G.GIFEncoder();
+      const sample = [];
+      let globalPalette = null, globalTIdx = 0;
+      const datas = [];
+      for (let i = 0; i < items.length; i++){
+        status('处理第 ' + (i+1) + ' / ' + items.length + ' 帧…');
+        setBar((i/items.length)*0.8);
+        await yieldUI();
+        const d = readFrame(items[i].bmp, W, H, bg, transparent);
+        datas.push(d);
+        if (!perFrame) samplePixels(d, sample);
+      }
+      if (!perFrame){
+        status('正在生成调色板…'); await yieldUI();
+        globalPalette = G.quantize(new Uint8Array(sample), colors, qopts);
+        if (!globalPalette.length) throw new Error('调色板生成失败');
+        globalTIdx = transparent ? globalPalette.findIndex(c => c.length > 3 && c[3] === 0) : 0;
+      }
+      for (let i = 0; i < datas.length; i++){
+        status('编码第 ' + (i+1) + ' / ' + datas.length + ' 帧…');
+        setBar(0.8 + ((i+1)/datas.length)*0.2);
+        await yieldUI();
+        const d = datas[i];
+        let pal = globalPalette, tIdx = globalTIdx;
+        if (perFrame){
+          pal = G.quantize(d, colors, qopts);
+          tIdx = transparent ? pal.findIndex(c => c.length > 3 && c[3] === 0) : 0;
+        }
+        const idx = G.applyPalette(d, pal, fmt);
+        gif.writeFrame(idx, W, H, {
+          palette: (i === 0 || perFrame) ? pal : null,
+          delay: delay,
+          repeat: i === 0 ? repeat : -1,
+          transparent: transparent && tIdx >= 0,
+          transparentIndex: Math.max(0, tIdx),
+          dispose: transparent ? 2 : -1
+        });
+      }
+      gif.finish();
+      const blob = new Blob([gif.bytes()], {type:'image/gif'});
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = URL.createObjectURL(blob);
+      $('#preview').src = resultUrl;
+      $('#size').textContent = W + '×' + H + ' · ' + items.length + ' 帧 · 每帧 ' + delay + 'ms · ' +
+        (blob.size/1024).toFixed(0) + ' KB';
+      const d = new Date(), p = n => String(n).padStart(2,'0');
+      $('#dl').download = '动图_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()) + '.gif';
+      $('#dl').href = resultUrl;
+      $('#outCard').hidden = false;
+      setBar(1); status('搞定！点「下载 GIF」保存到本地');
+      $('#outCard').scrollIntoView({behavior:'smooth',block:'start'});
+    } catch(err){
+      console.error(err);
+      status('生成失败：' + (err && err.message ? err.message : '图片可能太大或格式不支持，试试调小宽度'), true);
+    } finally {
+      busy = false; $('#make').disabled = false;
+    }
+  }
+  $('#make').addEventListener('click', build);
+})();
+</script>
+</body>
+</html>

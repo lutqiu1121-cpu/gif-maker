@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自适应图标底色：取自网页主色 brand（#3b6cf6） -->
+    <color name="ic_launcher_background">#3B6CF6</color>
+</resources>

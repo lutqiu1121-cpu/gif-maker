@@ -1,0 +1,13 @@
+# 构建产物
+build/
+dist/
+
+# 密钥
+*.keystore
+*.jks
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+# 构建时由 web/index.html 同步生成，不进仓库（保持单一真源）
+android/assets/index.html
